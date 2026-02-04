@@ -29,9 +29,13 @@
           <div class="hint">Stored locally in your browser session only.</div>
         </div>
         <div class="field">
-          <label for="mathpix-key">Mathpix API key</label>
-          <input id="mathpix-key" class="text-input" type="password" placeholder="Paste your Mathpix API key" />
-          <div class="hint">Used to read the table of contents.</div>
+          <label for="mathpix-id">Mathpix App ID</label>
+          <input id="mathpix-id" class="text-input" type="text" placeholder="Paste your Mathpix App ID" />
+          <div class="hint">Required to read the table of contents.</div>
+        </div>
+        <div class="field">
+          <label for="mathpix-key">Mathpix App Key</label>
+          <input id="mathpix-key" class="text-input" type="password" placeholder="Paste your Mathpix App Key" />
         </div>
         <label class="primary" for="pdf-input">Select PDF file</label>
         <input id="pdf-input" class="file-input" type="file" accept="application/pdf" />
@@ -118,8 +122,25 @@
     const loadingSplit = document.getElementById("loading-split");
     const results = document.getElementById("results");
     const splitButton = document.getElementById("split-button");
+    const openaiKey = document.getElementById("api-key");
+    const mathpixId = document.getElementById("mathpix-id");
+    const mathpixKey = document.getElementById("mathpix-key");
+    const uploadLabel = document.querySelector("label[for='pdf-input']");
+
+    const updateUploadState = () => {
+      const ready = openaiKey.value.trim() && mathpixId.value.trim() && mathpixKey.value.trim();
+      uploadLabel.classList.toggle("disabled", !ready);
+      uploadLabel.setAttribute("aria-disabled", ready ? "false" : "true");
+    };
+
+    [openaiKey, mathpixId, mathpixKey].forEach((field) => {
+      field.addEventListener("input", updateUploadState);
+    });
+
+    updateUploadState();
 
     input.addEventListener("change", () => {
+      if (uploadLabel.classList.contains("disabled")) return;
       if (!input.files.length) return;
       loadingUpload.classList.remove("hidden");
       toc.classList.add("hidden");

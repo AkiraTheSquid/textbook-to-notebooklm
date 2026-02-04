@@ -77,6 +77,11 @@ body {
   cursor: pointer;
 }
 
+.primary.disabled {
+  background: #d2cdd9;
+  cursor: not-allowed;
+}
+
 .primary:hover {
   background: var(--red-dark);
 }
