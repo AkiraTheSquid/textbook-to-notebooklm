@@ -23,6 +23,11 @@
     <section class="card">
       <div class="step">
         <div class="step-title">1. Upload your PDF</div>
+        <div class="field">
+          <label for="api-key">OpenAI API key</label>
+          <input id="api-key" class="text-input" type="password" placeholder="Paste your API key" />
+          <div class="hint">Stored locally in your browser session only.</div>
+        </div>
         <label class="primary" for="pdf-input">Select PDF file</label>
         <input id="pdf-input" class="file-input" type="file" accept="application/pdf" />
         <div class="hint">Supported: PDF only</div>
