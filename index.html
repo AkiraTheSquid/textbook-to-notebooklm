@@ -37,9 +37,9 @@
         </div>
       </div>
       <form class="login-form" id="auth-form">
-        <div class="toggle">
-          <button id="mode-login" class="toggle-btn active" type="button">Log in</button>
-          <button id="mode-signup" class="toggle-btn" type="button">Create account</button>
+        <div class="toggle" role="tablist" aria-label="Authentication mode">
+          <button id="mode-login" class="toggle-btn active" type="button" role="tab" aria-selected="true">Log in</button>
+          <button id="mode-signup" class="toggle-btn" type="button" role="tab" aria-selected="false">Create account</button>
         </div>
         <div class="field">
           <label for="email">Email</label>
@@ -50,6 +50,7 @@
           <input id="password" class="text-input" type="password" placeholder="Enter your password" />
         </div>
         <button id="auth-button" class="primary" type="submit">Log in</button>
+        <button id="auth-secondary" class="ghost" type="button">Create account</button>
         <div id="auth-message" class="hint" role="status"></div>
       </form>
     </div>
@@ -172,6 +173,7 @@
     const authMessage = document.getElementById("auth-message");
     const loginMode = document.getElementById("mode-login");
     const signupMode = document.getElementById("mode-signup");
+    const authSecondary = document.getElementById("auth-secondary");
 
     const updateUploadState = () => {
       const ready = openaiKey.value.trim() && mathpixId.value.trim() && mathpixKey.value.trim();
@@ -189,7 +191,10 @@
       const isLogin = mode === "login";
       loginMode.classList.toggle("active", isLogin);
       signupMode.classList.toggle("active", !isLogin);
+      loginMode.setAttribute("aria-selected", isLogin ? "true" : "false");
+      signupMode.setAttribute("aria-selected", isLogin ? "false" : "true");
       authButton.textContent = isLogin ? "Log in" : "Create account";
+      authSecondary.textContent = isLogin ? "Create account" : "Log in instead";
       authForm.dataset.mode = mode;
       authMessage.textContent = "";
     };
@@ -198,6 +203,10 @@
 
     loginMode.addEventListener("click", () => setMode("login"));
     signupMode.addEventListener("click", () => setMode("signup"));
+    authSecondary.addEventListener("click", () => {
+      const mode = authForm.dataset.mode || "login";
+      setMode(mode === "login" ? "signup" : "login");
+    });
 
     const supabase = window.supabase.createClient(
       "https://qaxtcaoydbpigomnfjpl.supabase.co",
@@ -259,7 +268,8 @@
       }
 
       if (mode === "signup") {
-        authMessage.textContent = "Check your email to confirm your account.";
+        authMessage.textContent = "Account created. Check your email to confirm, then log in.";
+        setTimeout(() => setMode("login"), 1500);
       } else {
         authMessage.textContent = "";
       }
