@@ -16,7 +16,41 @@
     </div>
   </header>
 
-  <main class="hero">
+  <main id="login-screen" class="login">
+    <div class="login-card">
+      <div class="login-badge">NotebookLM Converter</div>
+      <h1>Turn textbooks into a structured NotebookLM library</h1>
+      <p class="subtitle">Upload a PDF, extract the table of contents, and split chapters into clean, organized files ready for NotebookLM.</p>
+      <div class="login-grid">
+        <div class="login-feature">
+          <div class="feature-title">Smart structure</div>
+          <div class="feature-text">Chapters and subheadings are detected and organized logically.</div>
+        </div>
+        <div class="login-feature">
+          <div class="feature-title">Precise selection</div>
+          <div class="feature-text">Choose only the chapters and sections you want returned.</div>
+        </div>
+        <div class="login-feature">
+          <div class="feature-title">Fast delivery</div>
+          <div class="feature-text">Get split PDFs ready for upload to NotebookLM.</div>
+        </div>
+      </div>
+      <form class="login-form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" class="text-input" type="email" placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" class="text-input" type="password" placeholder="Enter your password" />
+        </div>
+        <button id="login-button" class="primary" type="button">Log in</button>
+        <div class="hint">Demo only — no credentials are stored.</div>
+      </form>
+    </div>
+  </main>
+
+  <main id="app" class="hero hidden">
     <h1>Split Your PDF by Chapter</h1>
     <p class="subtitle">Upload your PDF, review the detected table of contents, then choose the chapters you want returned.</p>
 
@@ -126,6 +160,9 @@
     const mathpixId = document.getElementById("mathpix-id");
     const mathpixKey = document.getElementById("mathpix-key");
     const uploadLabel = document.querySelector("label[for='pdf-input']");
+    const loginScreen = document.getElementById("login-screen");
+    const app = document.getElementById("app");
+    const loginButton = document.getElementById("login-button");
 
     const updateUploadState = () => {
       const ready = openaiKey.value.trim() && mathpixId.value.trim() && mathpixKey.value.trim();
@@ -138,6 +175,11 @@
     });
 
     updateUploadState();
+
+    loginButton.addEventListener("click", () => {
+      loginScreen.classList.add("hidden");
+      app.classList.remove("hidden");
+    });
 
     input.addEventListener("change", () => {
       if (uploadLabel.classList.contains("disabled")) return;
