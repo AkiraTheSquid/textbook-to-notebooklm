@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header class="topbar">
@@ -35,7 +36,11 @@
           <div class="feature-text">Get split PDFs ready for upload to NotebookLM.</div>
         </div>
       </div>
-      <form class="login-form">
+      <form class="login-form" id="auth-form">
+        <div class="toggle">
+          <button id="mode-login" class="toggle-btn active" type="button">Log in</button>
+          <button id="mode-signup" class="toggle-btn" type="button">Create account</button>
+        </div>
         <div class="field">
           <label for="email">Email</label>
           <input id="email" class="text-input" type="email" placeholder="you@example.com" />
@@ -44,8 +49,8 @@
           <label for="password">Password</label>
           <input id="password" class="text-input" type="password" placeholder="Enter your password" />
         </div>
-        <button id="login-button" class="primary" type="button">Log in</button>
-        <div class="hint">Demo only — no credentials are stored.</div>
+        <button id="auth-button" class="primary" type="submit">Log in</button>
+        <div id="auth-message" class="hint" role="status"></div>
       </form>
     </div>
   </main>
@@ -162,7 +167,11 @@
     const uploadLabel = document.querySelector("label[for='pdf-input']");
     const loginScreen = document.getElementById("login-screen");
     const app = document.getElementById("app");
-    const loginButton = document.getElementById("login-button");
+    const authForm = document.getElementById("auth-form");
+    const authButton = document.getElementById("auth-button");
+    const authMessage = document.getElementById("auth-message");
+    const loginMode = document.getElementById("mode-login");
+    const signupMode = document.getElementById("mode-signup");
 
     const updateUploadState = () => {
       const ready = openaiKey.value.trim() && mathpixId.value.trim() && mathpixKey.value.trim();
@@ -176,9 +185,84 @@
 
     updateUploadState();
 
-    loginButton.addEventListener("click", () => {
+    const setMode = (mode) => {
+      const isLogin = mode === "login";
+      loginMode.classList.toggle("active", isLogin);
+      signupMode.classList.toggle("active", !isLogin);
+      authButton.textContent = isLogin ? "Log in" : "Create account";
+      authForm.dataset.mode = mode;
+      authMessage.textContent = "";
+    };
+
+    setMode("login");
+
+    loginMode.addEventListener("click", () => setMode("login"));
+    signupMode.addEventListener("click", () => setMode("signup"));
+
+    const supabase = window.supabase.createClient(
+      "https://qaxtcaoydbpigomnfjpl.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFheHRjYW95ZGJwaWdvbW5manBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNzQ3MjQsImV4cCI6MjA4NTc1MDcyNH0.Mom-rTokqsvEbEshyvvfEjyL77AVa0LqJIg9FbpLvU4"
+    );
+
+    const showApp = () => {
       loginScreen.classList.add("hidden");
       app.classList.remove("hidden");
+    };
+
+    const showLogin = () => {
+      app.classList.add("hidden");
+      loginScreen.classList.remove("hidden");
+    };
+
+    const initSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        showApp();
+      } else {
+        showLogin();
+      }
+    };
+
+    initSession();
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        showApp();
+      } else {
+        showLogin();
+      }
+    });
+
+    authForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      authMessage.textContent = "Working...";
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        authMessage.textContent = "Enter an email and password.";
+        return;
+      }
+
+      const mode = authForm.dataset.mode || "login";
+      let result;
+
+      if (mode === "signup") {
+        result = await supabase.auth.signUp({ email, password });
+      } else {
+        result = await supabase.auth.signInWithPassword({ email, password });
+      }
+
+      if (result.error) {
+        authMessage.textContent = result.error.message;
+        return;
+      }
+
+      if (mode === "signup") {
+        authMessage.textContent = "Check your email to confirm your account.";
+      } else {
+        authMessage.textContent = "";
+      }
     });
 
     input.addEventListener("change", () => {
