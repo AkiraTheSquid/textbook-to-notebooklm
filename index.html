@@ -8,16 +8,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="logo">Delta Drills <span class="version-tag">v1.0.9</span></div>
     <nav class="tabs">
-      <button class="tab active" data-tab="how-it-works" type="button">How It Works</button>
-      <button class="tab" data-tab="courses" type="button">Courses</button>
-      <button class="tab" data-tab="login" type="button">Log In</button>
-      <button class="tab" data-tab="signup" type="button">Create Account</button>
+      <button class="tab active guest-only" data-tab="how-it-works" type="button">How It Works</button>
+      <button class="tab auth-only" data-tab="split-tool" type="button">Split Tool</button>
+      <button class="tab auth-only" data-tab="account" type="button">Account</button>
+      <button class="tab auth-only" data-tab="learn" type="button">Learn</button>
+      <button class="tab guest-only" data-tab="login" type="button">Log In</button>
+      <button class="tab guest-only" data-tab="signup" type="button">Create Account</button>
     </nav>
   </header>
 
@@ -45,10 +46,97 @@
     </div>
   </main>
 
-  <main class="page hidden" id="page-courses">
+  <main class="page hidden" id="page-split-tool">
     <div class="container">
-      <h1>Courses</h1>
-      <p class="subtitle">Coming soon. Your uploaded course materials will appear here.</p>
+      <div class="section-header">
+        <div>
+          <h1>Split a PDF</h1>
+          <p class="subtitle">Upload a PDF and optionally a chapters CSV. Use Auto TOC if you want the backend to detect chapters.</p>
+        </div>
+        <div class="section-actions">
+          <span id="auth-status" class="status-text"></span>
+          <button id="logout-button" class="ghost" type="button">Log out</button>
+        </div>
+      </div>
+
+      <section class="card">
+        <form id="job-form">
+          <div class="field">
+            <label for="pdf-file">PDF file</label>
+            <input id="pdf-file" class="file-input" type="file" accept="application/pdf" />
+          </div>
+          <div class="field">
+            <label for="chapters-csv">Chapters CSV (optional)</label>
+            <input id="chapters-csv" class="file-input" type="file" accept=".csv" />
+            <div class="hint">Upload if you already know the chapter page ranges.</div>
+          </div>
+          <div class="field checkbox-field">
+            <input id="auto-toc" type="checkbox" />
+            <label for="auto-toc">Auto TOC (use Mathpix + ChatGPT)</label>
+          </div>
+          <div class="field" id="page-offset-field">
+            <label for="page-offset">Page offset (only when Auto TOC is off)</label>
+            <input id="page-offset" class="text-input" type="number" value="0" />
+          </div>
+          <button class="primary" type="submit">Start split job</button>
+          <div id="job-message" class="hint" role="status"></div>
+        </form>
+      </section>
+
+      <section id="job-status" class="card hidden">
+        <div class="status-row">
+          <div>
+            <div class="status-title">Job status</div>
+            <div id="job-status-text" class="status-text"></div>
+          </div>
+          <div id="job-id" class="status-id"></div>
+        </div>
+      </section>
+
+      <section id="chapters-section" class="card hidden">
+        <div class="status-title">Download chapters</div>
+        <div id="chapters-list" class="results"></div>
+      </section>
+    </div>
+  </main>
+
+  <main class="page hidden" id="page-account">
+    <div class="container">
+      <h1>Account</h1>
+      <p class="subtitle">Update your API credentials and defaults used by the split tool.</p>
+      <section class="card">
+        <form id="account-form">
+          <div class="field">
+            <label for="account-api-base">API base URL</label>
+            <input id="account-api-base" class="text-input" type="text" placeholder="https://api.example.com" />
+            <div class="hint">Use your deployed backend URL (not localhost) for Vercel.</div>
+          </div>
+          <div class="field">
+            <label for="account-openai-key">OpenAI API key</label>
+            <input id="account-openai-key" class="text-input" type="text" placeholder="sk-..." />
+          </div>
+          <div class="field">
+            <label for="account-mathpix-id">Mathpix App ID</label>
+            <input id="account-mathpix-id" class="text-input" type="text" placeholder="Your Mathpix App ID" />
+          </div>
+          <div class="field">
+            <label for="account-mathpix-key">Mathpix App Key</label>
+            <input id="account-mathpix-key" class="text-input" type="text" placeholder="Your Mathpix App Key" />
+          </div>
+          <button class="primary" type="submit">Save settings</button>
+          <div id="account-message" class="hint" role="status"></div>
+        </form>
+        <div class="account-actions">
+          <button id="account-logout" class="ghost" type="button">Log out</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <main class="page hidden" id="page-learn">
+    <div class="container">
+      <h1>Learn</h1>
+      <p class="subtitle">Coming soon.</p>
     </div>
   </main>
 
@@ -104,13 +192,38 @@
 
   <script>
     const tabs = document.querySelectorAll(".tab");
+    const authOnlyTabs = document.querySelectorAll(".auth-only");
+    const guestOnlyTabs = document.querySelectorAll(".guest-only");
     const pages = document.querySelectorAll(".page");
     const loginForm = document.getElementById("login-form");
     const loginMessage = document.getElementById("login-message");
     const signupForm = document.getElementById("signup-form");
     const signupMessage = document.getElementById("signup-message");
+    const jobForm = document.getElementById("job-form");
+    const jobMessage = document.getElementById("job-message");
+    const jobStatus = document.getElementById("job-status");
+    const jobStatusText = document.getElementById("job-status-text");
+    const jobIdLabel = document.getElementById("job-id");
+    const chaptersSection = document.getElementById("chapters-section");
+    const chaptersList = document.getElementById("chapters-list");
+    const authStatus = document.getElementById("auth-status");
+    const logoutButton = document.getElementById("logout-button");
+    const autoToc = document.getElementById("auto-toc");
+    const pageOffsetField = document.getElementById("page-offset-field");
+    const accountForm = document.getElementById("account-form");
+    const accountMessage = document.getElementById("account-message");
+    const accountLogout = document.getElementById("account-logout");
+
+    const defaultApiBase = `${window.location.origin}`;
+    let API_BASE = localStorage.getItem("api_base") || defaultApiBase;
+    let authToken = localStorage.getItem("auth_token") || "";
+    let authEmail = localStorage.getItem("auth_email") || "";
 
     const switchTab = (tabName) => {
+      if ((tabName === "split-tool" || tabName === "account" || tabName === "learn") && !authToken) {
+        loginMessage.textContent = "Please log in to start a job.";
+        tabName = "login";
+      }
       tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === tabName));
       pages.forEach((p) => p.classList.toggle("hidden", p.id !== `page-${tabName}`));
     };
@@ -119,22 +232,46 @@
       t.addEventListener("click", () => switchTab(t.dataset.tab));
     });
 
-    let supabase = null;
-    try {
-      supabase = window.supabase.createClient(
-        "https://qaxtcaoydbpigomnfjpl.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFheHRjYW95ZGJwaWdvbW5manBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNzQ3MjQsImV4cCI6MjA4NTc1MDcyNH0.Mom-rTokqsvEbEshyvvfEjyL77AVa0LqJIg9FbpLvU4"
-      );
-    } catch (e) {
-      console.error("Supabase init failed:", e);
-    }
+    const updateTabVisibility = () => {
+      authOnlyTabs.forEach((t) => t.classList.toggle("hidden", !authToken));
+      guestOnlyTabs.forEach((t) => t.classList.toggle("hidden", !!authToken));
+    };
+
+    const setAuthState = (token, email) => {
+      authToken = token || "";
+      authEmail = email || "";
+      if (authToken) {
+        localStorage.setItem("auth_token", authToken);
+        localStorage.setItem("auth_email", authEmail);
+        authStatus.textContent = authEmail ? `Logged in as ${authEmail}` : "Logged in";
+        switchTab("split-tool");
+      } else {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_email");
+        authStatus.textContent = "";
+        switchTab("login");
+      }
+      updateTabVisibility();
+    };
+
+    logoutButton.addEventListener("click", () => {
+      setAuthState("", "");
+    });
+    accountLogout.addEventListener("click", () => {
+      setAuthState("", "");
+    });
+
+    const apiFetch = async (path, options = {}) => {
+      const headers = options.headers ? { ...options.headers } : {};
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+      return response;
+    };
 
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!supabase) {
-        loginMessage.textContent = "Auth service unavailable. Try refreshing.";
-        return;
-      }
       loginMessage.textContent = "Working...";
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
@@ -145,17 +282,20 @@
       }
 
       try {
-        const result = await supabase.auth.signInWithPassword({ email, password });
-        if (result.error) {
-          loginMessage.textContent = result.error.message;
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          loginMessage.textContent = data.detail || "Login failed.";
           return;
         }
         loginMessage.textContent = "Logged in!";
         loginForm.reset();
-        setTimeout(() => {
-          loginMessage.textContent = "";
-          switchTab("courses");
-        }, 600);
+        setAuthState(data.access_token, email);
+        setTimeout(() => (loginMessage.textContent = ""), 1000);
       } catch (e) {
         loginMessage.textContent = e.message;
       }
@@ -163,10 +303,6 @@
 
     signupForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!supabase) {
-        signupMessage.textContent = "Auth service unavailable. Try refreshing.";
-        return;
-      }
       signupMessage.textContent = "Working...";
       const email = document.getElementById("signup-email").value.trim();
       const password = document.getElementById("signup-password").value;
@@ -183,21 +319,198 @@
       }
 
       try {
-        const result = await supabase.auth.signUp({ email, password });
-        if (result.error) {
-          signupMessage.textContent = result.error.message;
+        const response = await fetch(`${API_BASE}/auth/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          signupMessage.textContent = data.detail || "Signup failed.";
           return;
         }
-        signupMessage.textContent = "Account created! Check your email to confirm, then log in.";
+        signupMessage.textContent = "Account created!";
         signupForm.reset();
-        setTimeout(() => {
-          signupMessage.textContent = "";
-          switchTab("login");
-        }, 2000);
+        setAuthState(data.access_token, email);
+        setTimeout(() => (signupMessage.textContent = ""), 1000);
       } catch (e) {
         signupMessage.textContent = e.message;
       }
     });
+
+    const updateAutoTocState = () => {
+      const isAuto = autoToc.checked;
+      pageOffsetField.classList.toggle("hidden", isAuto);
+    };
+
+    autoToc.addEventListener("change", updateAutoTocState);
+    updateAutoTocState();
+
+    const renderChapters = (jobId, chapters) => {
+      chaptersList.innerHTML = "";
+      if (!chapters.length) {
+        chaptersList.textContent = "No chapters generated.";
+        return;
+      }
+      chapters.forEach((chapter) => {
+        const row = document.createElement("div");
+        row.className = "result-item";
+
+        const title = document.createElement("span");
+        title.textContent = `${chapter.title} (${chapter.start_page}-${chapter.end_page})`;
+
+        const button = document.createElement("button");
+        button.className = "ghost";
+        button.type = "button";
+        button.textContent = "Download";
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          try {
+            const response = await apiFetch(`/jobs/${jobId}/chapters/${chapter.id}/download`);
+            if (!response.ok) {
+              jobMessage.textContent = "Download failed.";
+              return;
+            }
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = chapter.filename || "chapter.pdf";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            jobMessage.textContent = e.message;
+          } finally {
+            button.disabled = false;
+          }
+        });
+
+        row.appendChild(title);
+        row.appendChild(button);
+        chaptersList.appendChild(row);
+      });
+    };
+
+    const pollJob = async (jobId) => {
+      try {
+        const response = await apiFetch(`/jobs/${jobId}`);
+        const data = await response.json();
+        if (!response.ok) {
+          jobStatusText.textContent = data.detail || "Failed to fetch job.";
+          return;
+        }
+        jobStatusText.textContent = data.status;
+        if (data.status === "completed") {
+          const chaptersResponse = await apiFetch(`/jobs/${jobId}/chapters`);
+          const chapters = await chaptersResponse.json();
+          chaptersSection.classList.remove("hidden");
+          renderChapters(jobId, chaptersResponse.ok ? chapters : []);
+          return;
+        }
+        if (data.status === "failed") {
+          jobMessage.textContent = data.error_message || "Job failed.";
+          return;
+        }
+        setTimeout(() => pollJob(jobId), 2500);
+      } catch (e) {
+        jobStatusText.textContent = e.message;
+      }
+    };
+
+    jobForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      jobMessage.textContent = "";
+      chaptersSection.classList.add("hidden");
+
+      const pdfFile = document.getElementById("pdf-file").files[0];
+      const csvFile = document.getElementById("chapters-csv").files[0];
+      const pageOffset = document.getElementById("page-offset").value || "0";
+
+      if (!pdfFile) {
+        jobMessage.textContent = "Please select a PDF.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("pdf_file", pdfFile);
+      if (csvFile) {
+        formData.append("chapters_csv", csvFile);
+      }
+      formData.append("auto_toc", autoToc.checked ? "true" : "false");
+      formData.append("page_offset", pageOffset);
+      const savedOpenaiKey = localStorage.getItem("account_openai_key") || "";
+      const savedMathpixId = localStorage.getItem("account_mathpix_id") || "";
+      const savedMathpixKey = localStorage.getItem("account_mathpix_key") || "";
+      if (savedOpenaiKey) {
+        formData.append("openai_api_key", savedOpenaiKey);
+      }
+      if (savedMathpixId) {
+        formData.append("mathpix_app_id", savedMathpixId);
+      }
+      if (savedMathpixKey) {
+        formData.append("mathpix_app_key", savedMathpixKey);
+      }
+
+      try {
+        jobMessage.textContent = "Uploading...";
+        const response = await apiFetch("/jobs", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          jobMessage.textContent = data.detail || "Job creation failed.";
+          return;
+        }
+        jobMessage.textContent = "Job started.";
+        jobStatus.classList.remove("hidden");
+        jobIdLabel.textContent = data.id;
+        jobStatusText.textContent = data.status;
+        pollJob(data.id);
+      } catch (e) {
+        jobMessage.textContent = e.message;
+      }
+    });
+
+    if (authToken) {
+      authStatus.textContent = authEmail ? `Logged in as ${authEmail}` : "Logged in";
+      switchTab("split-tool");
+    } else {
+      switchTab("how-it-works");
+    }
+    updateTabVisibility();
+
+    accountForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const apiBase = document.getElementById("account-api-base").value.trim();
+      const openaiKey = document.getElementById("account-openai-key").value.trim();
+      const mathpixId = document.getElementById("account-mathpix-id").value.trim();
+      const mathpixKey = document.getElementById("account-mathpix-key").value.trim();
+
+      if (apiBase) {
+        localStorage.setItem("api_base", apiBase);
+        API_BASE = apiBase;
+      } else {
+        localStorage.removeItem("api_base");
+        API_BASE = defaultApiBase;
+      }
+      localStorage.setItem("account_openai_key", openaiKey);
+      localStorage.setItem("account_mathpix_id", mathpixId);
+      localStorage.setItem("account_mathpix_key", mathpixKey);
+      accountMessage.textContent = "Saved locally in this browser.";
+      setTimeout(() => (accountMessage.textContent = ""), 1500);
+    });
+
+    const savedApiBase = localStorage.getItem("api_base") || "";
+    const savedOpenai = localStorage.getItem("account_openai_key") || "";
+    const savedMathpixId = localStorage.getItem("account_mathpix_id") || "";
+    const savedMathpixKey = localStorage.getItem("account_mathpix_key") || "";
+    document.getElementById("account-api-base").value = savedApiBase;
+    document.getElementById("account-openai-key").value = savedOpenai;
+    document.getElementById("account-mathpix-id").value = savedMathpixId;
+    document.getElementById("account-mathpix-key").value = savedMathpixKey;
   </script>
 </body>
 </html>
