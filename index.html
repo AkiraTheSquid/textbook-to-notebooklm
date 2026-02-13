@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Delta Drills v1.0.5</title>
+  <title>Delta Drills v1.0.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="logo">Delta Drills <span class="version-tag">v1.0.5</span></div>
+    <div class="logo">Delta Drills <span class="version-tag">v1.0.6</span></div>
     <nav class="tabs">
       <button class="tab active" data-tab="how-it-works" type="button">How It Works</button>
       <button class="tab" data-tab="courses" type="button">Courses</button>
@@ -99,7 +99,7 @@
 
   <footer class="footer">
     <span>&copy; Delta Labs</span>
-    <span class="version-tag">v1.0.5</span>
+    <span class="version-tag">v1.0.6</span>
   </footer>
 
   <script>
@@ -119,13 +119,22 @@
       t.addEventListener("click", () => switchTab(t.dataset.tab));
     });
 
-    const supabase = window.supabase.createClient(
-      "https://qaxtcaoydbpigomnfjpl.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFheHRjYW95ZGJwaWdvbW5manBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNzQ3MjQsImV4cCI6MjA4NTc1MDcyNH0.Mom-rTokqsvEbEshyvvfEjyL77AVa0LqJIg9FbpLvU4"
-    );
+    let supabase = null;
+    try {
+      supabase = window.supabase.createClient(
+        "https://qaxtcaoydbpigomnfjpl.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFheHRjYW95ZGJwaWdvbW5manBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNzQ3MjQsImV4cCI6MjA4NTc1MDcyNH0.Mom-rTokqsvEbEshyvvfEjyL77AVa0LqJIg9FbpLvU4"
+      );
+    } catch (e) {
+      console.error("Supabase failed to load:", e);
+    }
 
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (!supabase) {
+        loginMessage.textContent = "Auth service unavailable. Try refreshing.";
+        return;
+      }
       loginMessage.textContent = "Working...";
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
@@ -151,6 +160,10 @@
 
     signupForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (!supabase) {
+        signupMessage.textContent = "Auth service unavailable. Try refreshing.";
+        return;
+      }
       signupMessage.textContent = "Working...";
       const email = document.getElementById("signup-email").value.trim();
       const password = document.getElementById("signup-password").value;
