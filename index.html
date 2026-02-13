@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Delta Drills v1.0.4</title>
+  <title>Delta Drills v1.0.5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="logo">Delta Drills <span class="version-tag">v1.0.4</span></div>
+    <div class="logo">Delta Drills <span class="version-tag">v1.0.5</span></div>
     <nav class="tabs">
       <button class="tab active" data-tab="how-it-works" type="button">How It Works</button>
       <button class="tab" data-tab="courses" type="button">Courses</button>
@@ -99,7 +99,7 @@
 
   <footer class="footer">
     <span>&copy; Delta Labs</span>
-    <span class="version-tag">v1.0.4</span>
+    <span class="version-tag">v1.0.5</span>
   </footer>
 
   <script>
@@ -142,6 +142,11 @@
         return;
       }
       loginMessage.textContent = "Logged in!";
+      loginForm.reset();
+      setTimeout(() => {
+        loginMessage.textContent = "";
+        switchTab("courses");
+      }, 600);
     });
 
     signupForm.addEventListener("submit", async (event) => {
@@ -168,7 +173,12 @@
         return;
       }
 
-      signupMessage.textContent = "Account created. Check your email to confirm, then log in.";
+      signupMessage.textContent = "Account created! Check your email to confirm, then log in.";
+      signupForm.reset();
+      setTimeout(() => {
+        signupMessage.textContent = "";
+        switchTab("login");
+      }, 2000);
     });
   </script>
 </body>
