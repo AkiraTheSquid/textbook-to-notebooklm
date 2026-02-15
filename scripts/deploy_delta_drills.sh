@@ -58,8 +58,8 @@ info "Exporting question bank to questions.json..."
 python3 "$REPO_DIR/scripts/export_questions_json.py"
 
 # If the export created/updated questions.json, stage and commit it
-if ! git -C "$REPO_DIR" diff --quiet questions.json 2>/dev/null || \
-   git -C "$REPO_DIR" ls-files --others --exclude-standard | grep -q "questions.json"; then
+if ! git -C "$REPO_DIR" diff --quiet -- questions.json 2>/dev/null || \
+   git -C "$REPO_DIR" ls-files --others --exclude-standard -- questions.json | grep -q .; then
   info "questions.json updated — auto-committing..."
   git -C "$REPO_DIR" add questions.json
   git -C "$REPO_DIR" commit -m "chore: update questions.json for deploy"
