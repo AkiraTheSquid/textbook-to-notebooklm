@@ -37,26 +37,31 @@ fi
 
 info "Checking for uncommitted changes on main..."
 if ! git -C "$REPO_DIR" diff --quiet || ! git -C "$REPO_DIR" diff --cached --quiet; then
-  warn "You have uncommitted changes on main:"
+  warn "Uncommitted changes detected — auto-committing tracked files:"
   git -C "$REPO_DIR" status --short
-  echo ""
-  read -r -p "Continue anyway? Changes will NOT be deployed. [y/N] " answer
-  if [[ ! "$answer" =~ ^[Yy]$ ]]; then
-    echo "Aborted. Commit your changes first."
-    exit 1
+
+  # Auto-commit tracked file changes; leave untracked files untouched.
+  git -C "$REPO_DIR" add -u
+  if ! git -C "$REPO_DIR" diff --cached --quiet; then
+    git -C "$REPO_DIR" commit -m "chore: auto-commit before deploy"
+  fi
+
+  if git -C "$REPO_DIR" ls-files --others --exclude-standard | grep -q .; then
+    warn "Untracked files were NOT committed:"
+    git -C "$REPO_DIR" ls-files --others --exclude-standard
   fi
 fi
 
 # --- Step 2: Export question bank ---
 
-info "Exporting question bank to frontend/questions.json..."
+info "Exporting question bank to questions.json..."
 python3 "$REPO_DIR/scripts/export_questions_json.py"
 
 # If the export created/updated questions.json, stage and commit it
-if ! git -C "$REPO_DIR" diff --quiet frontend/questions.json 2>/dev/null || \
-   git -C "$REPO_DIR" ls-files --others --exclude-standard | grep -q "frontend/questions.json"; then
+if ! git -C "$REPO_DIR" diff --quiet -- questions.json 2>/dev/null || \
+   git -C "$REPO_DIR" ls-files --others --exclude-standard -- questions.json | grep -q .; then
   info "questions.json updated — auto-committing..."
-  git -C "$REPO_DIR" add frontend/questions.json
+  git -C "$REPO_DIR" add questions.json
   git -C "$REPO_DIR" commit -m "chore: update questions.json for deploy"
 fi
 
