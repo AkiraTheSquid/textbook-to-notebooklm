@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Export the CSV question bank to frontend/questions.json.
+Export the CSV question bank to questions.json.
 
 Reads the same CSV that the backend uses (skipping 2 header rows),
 and produces a JSON array ready for the frontend / Pyodide practice engine.
@@ -15,7 +15,7 @@ from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 CSV_PATH = REPO_DIR / "csv files of problems" / "Export of numpy problems with outputs.csv"
-OUT_PATH = REPO_DIR / "frontend" / "questions.json"
+OUT_PATH = REPO_DIR / "questions.json"
 
 
 def classify_difficulty(question_text: str, numeric_score: int) -> str:
